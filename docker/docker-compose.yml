@@ -1,0 +1,23 @@
+version: '3.8'
+
+services:
+  ibook:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    ports:
+      - "8080:8000"
+    volumes:
+      - ibook_data:/app/data
+      - ibook_uploads:/app/uploads
+      - ibook_backups:/app/backups
+    environment:
+      - SECRET_KEY=${SECRET_KEY:-please-change-this-secret-key}
+      - ADMIN_PASSWORD=${ADMIN_PASSWORD:-}
+      - ALLOWED_ORIGINS=${ALLOWED_ORIGINS:-*}
+    restart: unless-stopped
+
+volumes:
+  ibook_data:
+  ibook_uploads:
+  ibook_backups:
