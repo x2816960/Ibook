@@ -2,6 +2,22 @@
 
 所有版本更新记录。遵循 [语义化版本](https://semver.org/lang/zh-CN/) 规范。
 
+## [1.3.0] - 2026-03-23
+
+### 安全修复
+- 附件下载接口恢复认证验证：防止用户通过猜测 attachment ID 访问他人的附件
+- 新增 `get_current_user_optional` 支持从 query 参数读取 token，解决 Markdown 预览图片/视频的认证问题
+- 前端 Markdown 渲染时自动给图片 URL 附加 token
+
+### 优化
+- 附件存储路径优化：`{user_id}/{task_id}/{yyyy-mm-dd}_{uuid}.{ext}`
+  - 保留 task_id 层级，便于按任务管理文件
+  - 文件名增加日期前缀，一眼识别上传时间
+  - 随机 UUID 命名，避免文件名冲突，隐藏原始文件名
+
+### Bug 修复
+- 修复永久删除任务时附件文件未同步删除的问题
+
 ## [1.2.0] - 2026-03-23
 
 ### Bug 修复

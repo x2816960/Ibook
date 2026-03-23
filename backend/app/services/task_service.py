@@ -181,11 +181,13 @@ def restore_task(db: Session, task_id: int, user_id: int) -> dict:
 
 
 def permanent_delete_task(db: Session, task_id: int, user_id: int):
+    from app.services.attachment_service import delete_task_attachments
     task = db.query(Task).filter(
         Task.id == task_id, Task.user_id == user_id, Task.is_deleted == True
     ).first()
     if not task:
         raise HTTPException(status_code=404, detail="任务不存在")
+    delete_task_attachments(db, task_id)
     db.delete(task)
     db.commit()
 

@@ -2,6 +2,7 @@ import uuid
 import mimetypes
 import subprocess
 import logging
+from datetime import datetime
 from pathlib import Path
 
 from sqlalchemy.orm import Session
@@ -57,7 +58,8 @@ def upload_attachment(
         raise HTTPException(status_code=400, detail=f"文件大小超过限制({max_mb:.0f}MB)")
 
     ext = file.filename.rsplit('.', 1)[-1].lower() if '.' in file.filename else ''
-    stored_name = f"{uuid.uuid4().hex}.{ext}"
+    date_prefix = datetime.now().strftime("%Y-%m-%d")
+    stored_name = f"{date_prefix}_{uuid.uuid4().hex}.{ext}"
     rel_path = f"{user_id}/{task_id}/{stored_name}"
     abs_path = UPLOAD_PATH / str(user_id) / str(task_id)
     abs_path.mkdir(parents=True, exist_ok=True)
@@ -167,6 +169,7 @@ def _transcode_video_if_needed(
     saved_file: Path, stored_name: str, user_id: int, task_id: int
 ) -> tuple:
     """如果视频不是 H.264 编码，转码为 H.264"""
+    date_prefix = datetime.now().strftime("%Y-%m-%d")
     codec = _get_video_codec(saved_file)
     if codec is None or codec == "h264":
         # 无法检测或已经是 H.264，直接返回
@@ -175,7 +178,7 @@ def _transcode_video_if_needed(
         return saved_file, stored_name, rel_path, file_size
 
     logger.info(f"视频编码为 {codec}，开始转码为 H.264: {saved_file}")
-    out_name = f"{uuid.uuid4().hex}.mp4"
+    out_name = f"{date_prefix}_{uuid.uuid4().hex}.mp4"
     out_path = saved_file.parent / out_name
 
     try:

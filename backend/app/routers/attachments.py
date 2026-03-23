@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 from typing import Optional
 import os
 
-from app.dependencies import get_db, get_current_user
+from app.dependencies import get_db, get_current_user, get_current_user_optional
 from app.models.user import User
 from app.models.token_blacklist import TokenBlacklist
 from app.schemas.attachment import AttachmentResponse
@@ -65,9 +65,10 @@ def download_attachment(
     preview: bool = Query(False),
     db: Session = Depends(get_db),
 ):
-    # 附件下载不再需要token验证，URL中不带token
-    # 只要附件存在就能访问
-    attachment = attachment_service.get_attachment(db, attachment_id, user_id=None)
+    # 验证附件是否属于当前用户，防止越权访问
+    # 支持从 Authorization header 或 token query 参数获取用户
+    user = get_current_user_optional(request, db)
+    attachment = attachment_service.get_attachment(db, attachment_id, user_id=user.id)
 
     file_path = UPLOAD_PATH / attachment.file_path
     if not file_path.exists():
