@@ -63,13 +63,12 @@ def download_attachment(
     request: Request,
     attachment_id: int,
     preview: bool = Query(False),
-    token: Optional[str] = Query(None),
-    authorization: Optional[str] = Header(None),
     db: Session = Depends(get_db),
 ):
-    user = _resolve_user(db, token, authorization)
+    # 附件下载不再需要token验证，URL中不带token
+    # 只要附件存在就能访问
+    attachment = attachment_service.get_attachment(db, attachment_id, user_id=None)
 
-    attachment = attachment_service.get_attachment(db, attachment_id, user.id)
     file_path = UPLOAD_PATH / attachment.file_path
     if not file_path.exists():
         raise HTTPException(status_code=404, detail="文件不存在")

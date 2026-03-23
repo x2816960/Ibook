@@ -100,10 +100,13 @@ def list_attachments(db: Session, task_id: int, user_id: int) -> list[dict]:
     return [_attachment_to_response(a) for a in attachments]
 
 
-def get_attachment(db: Session, attachment_id: int, user_id: int):
-    attachment = db.query(Attachment).join(Task).filter(
-        Attachment.id == attachment_id, Task.user_id == user_id
-    ).first()
+def get_attachment(db: Session, attachment_id: int, user_id: int | None = None):
+    query = db.query(Attachment).join(Task)
+    if user_id is not None:
+        query = query.filter(Attachment.id == attachment_id, Task.user_id == user_id)
+    else:
+        query = query.filter(Attachment.id == attachment_id)
+    attachment = query.first()
     if not attachment:
         raise HTTPException(status_code=404, detail="附件不存在")
     return attachment

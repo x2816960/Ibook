@@ -133,13 +133,21 @@
 
 `multipart/form-data`，字段名 `file`
 
+需要 Bearer Token 认证。
+
 ### GET /api/tasks/{task_id}/attachments - 获取附件列表
+
+需要 Bearer Token 认证。
 
 ### GET /api/attachments/{id}/download - 下载附件
 
-查询参数: `preview=true` 内联显示
+**无需认证**（URL 无需 token）
+
+查询参数: `preview=true` 内联显示（用于图片预览、视频播放）
 
 ### DELETE /api/attachments/{id} - 删除附件
+
+需要 Bearer Token 认证。
 
 ## 管理员接口
 
