@@ -2,6 +2,16 @@
 
 所有版本更新记录。遵循 [语义化版本](https://semver.org/lang/zh-CN/) 规范。
 
+## [1.3.1] - 2026-03-23
+
+### Bug 修复
+- **修复附件图片/视频在任务详情和 Markdown 预览中加载失败的问题**
+  - 问题原因：浏览器直接请求 `<img>` 或 `<video>` 标签时不会携带 Authorization header，导致后端返回 401
+  - 修复方案：前端在生成附件预览 URL 时附加 token query 参数
+  - 修改文件：
+    - `AttachmentList.vue`: `getPreviewUrl()` 函数增加 token 附加逻辑
+    - `MarkdownEditor.vue`: `handleUploadImg()` 和 `handleVideoSelected()` 函数增加 token 附加逻辑
+
 ## [1.3.0] - 2026-03-23
 
 ### 安全修复

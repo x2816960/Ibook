@@ -70,11 +70,13 @@ async function handleUploadImg(files, callback) {
     callback([])
     return
   }
+  const token = localStorage.getItem('token') || sessionStorage.getItem('token')
   const urls = []
   for (const file of files) {
     try {
       const res = await attachmentApi.upload(props.taskId, file)
-      urls.push(attachmentApi.downloadUrl(res.data.id, true))
+      const baseUrl = attachmentApi.downloadUrl(res.data.id, true)
+      urls.push(token ? `${baseUrl}&token=${token}` : baseUrl)
     } catch {
       // skip failed
     }
@@ -98,7 +100,9 @@ async function handleVideoSelected(e) {
   try {
     ElMessage.info('视频上传中...')
     const res = await attachmentApi.upload(props.taskId, file)
-    const videoUrl = attachmentApi.downloadUrl(res.data.id, true)
+    const baseUrl = attachmentApi.downloadUrl(res.data.id, true)
+    const token = localStorage.getItem('token') || sessionStorage.getItem('token')
+    const videoUrl = token ? `${baseUrl}&token=${token}` : baseUrl
     const videoTag = `\n<video src="${videoUrl}" controls style="max-width:100%"></video>\n`
     content.value += videoTag
     ElMessage.success('视频上传成功')

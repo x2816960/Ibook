@@ -60,7 +60,12 @@ const imageUrls = computed(() =>
 )
 
 function getPreviewUrl(id) {
-  return attachmentApi.downloadUrl(id, true)
+  const baseUrl = attachmentApi.downloadUrl(id, true)
+  const token = localStorage.getItem('token') || sessionStorage.getItem('token')
+  if (token) {
+    return `${baseUrl}&token=${token}`
+  }
+  return baseUrl
 }
 
 function download(att) {
