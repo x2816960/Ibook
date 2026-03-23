@@ -20,15 +20,17 @@ const props = defineProps({
 const content = ref(props.task.detail_content || '')
 const attachments = ref([])
 
-// 给 Markdown 中的图片 URL 附加 token
+// 给 Markdown 中的图片 URL 附加/替换 token
 const processedContent = computed(() => {
   if (!content.value) return ''
   const token = localStorage.getItem('token') || sessionStorage.getItem('token')
   if (!token) return content.value
-  // 替换 /api/attachments/{id}/download 为带 token 的 URL
+  // 替换整个 query string，确保新 token 在最后
+  // 匹配 /api/attachments/{id}/download?preview=true 及其后的 &token=xxx
+  // [^)\s"'] 兼容 markdown ![](url) 和 HTML <img>/<video> 标签
   return content.value.replace(
-    /\/api\/attachments\/(\d+)\/download\?preview=true/g,
-    (match, id) => `${match}&token=${token}`
+    /\/api\/attachments\/(\d+)\/download\?preview=true(?:&token=[^)\s"']+)?/g,
+    `/api/attachments/$1/download?preview=true&token=${token}`
   )
 })
 

@@ -62,7 +62,22 @@ const toolbarConfig = [
   'pageFullscreen', 'fullscreen', 'preview', 'previewOnly',
 ]
 
-watch(() => props.modelValue, (v) => { content.value = v })
+watch(() => props.modelValue, (v) => {
+  if (!v) {
+    content.value = ''
+    return
+  }
+  const token = localStorage.getItem('token') || sessionStorage.getItem('token')
+  if (!token) {
+    content.value = v
+    return
+  }
+  // 替换URL中的旧token为当前token（兼容 markdown ![](url) 和 HTML <img>/<video> 标签）
+  content.value = v.replace(
+    /\/api\/attachments\/(\d+)\/download\?preview=true(?:&token=[^)\s"']+)?/g,
+    `/api/attachments/$1/download?preview=true&token=${token}`
+  )
+}, { immediate: true })
 watch(content, (v) => emit('update:modelValue', v))
 
 async function handleUploadImg(files, callback) {

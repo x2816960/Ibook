@@ -2,6 +2,21 @@
 
 所有版本更新记录。遵循 [语义化版本](https://semver.org/lang/zh-CN/) 规范。
 
+## [1.3.3] - 2026-03-23
+
+### Bug 修复
+- **修复 Markdown 编辑器预览模式下大部分图片无法显示的问题**
+  - 问题原因：`MarkdownEditor.vue` 组件初始化时 `content = ref(props.modelValue)` 直接使用原始内容，未替换过期的 JWT token；`watch` 监听 `props.modelValue` 缺少 `{ immediate: true }`，首次加载不触发 token 替换逻辑
+  - 对比：`TaskDetail.vue`（展开视图）使用 `computed` 属性，每次渲染都会执行 token 替换，因此图片正常显示
+  - 修复方案：为 `watch` 添加 `{ immediate: true }` 选项，确保组件首次加载即执行 token 替换
+  - 修改文件：`frontend/src/components/markdown/MarkdownEditor.vue`
+
+### 优化
+- **改进附件 URL token 替换正则表达式**
+  - 原正则 `[^)]+` 仅适配 Markdown 图片语法 `![](url)`（以 `)` 结尾）
+  - 新正则 `[^)\s"']+` 同时兼容 HTML 标签 `<img src="url">`、`<video src="url">` 场景
+  - 修改文件：`frontend/src/components/markdown/MarkdownEditor.vue`、`frontend/src/components/task/TaskDetail.vue`
+
 ## [1.3.2] - 2026-03-23
 
 ### Bug 修复
