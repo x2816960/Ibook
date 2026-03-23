@@ -141,7 +141,9 @@
 
 ### GET /api/attachments/{id}/download - 下载附件
 
-**无需认证**（URL 无需 token）
+**需要认证**：支持以下两种方式
+1. Authorization header: `Authorization: Bearer <token>`
+2. Query 参数: `token=<token>`
 
 查询参数: `preview=true` 内联显示（用于图片预览、视频播放）
 

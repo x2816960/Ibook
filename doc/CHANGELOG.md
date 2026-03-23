@@ -2,6 +2,14 @@
 
 所有版本更新记录。遵循 [语义化版本](https://semver.org/lang/zh-CN/) 规范。
 
+## [1.3.2] - 2026-03-23
+
+### Bug 修复
+- **修复任务详情附件列表中点击不同图片预览均显示第1张的问题**
+  - 问题原因：Element Plus `el-image` 组件在多个组件共享同一个 `preview-src-list` 数组时，预览索引计算错误
+  - 修复方案：将每个 `el-image` 的 `preview-src-list` 设为只包含该图片自己的 URL
+  - 修改文件：`frontend/src/components/attachment/AttachmentList.vue`
+
 ## [1.3.1] - 2026-03-23
 
 ### Bug 修复

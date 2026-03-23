@@ -5,7 +5,7 @@
         <el-image
           v-if="att.file_type === 'image'"
           :src="getPreviewUrl(att.id)"
-          :preview-src-list="imageUrls"
+          :preview-src-list="[getPreviewUrl(att.id)]"
           fit="cover"
           class="att-thumb"
         />
@@ -38,7 +38,7 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref } from 'vue'
 import { VideoCamera, Document, Download, Delete } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import { attachmentApi } from '../../api/attachments'
@@ -52,12 +52,6 @@ const emit = defineEmits(['deleted'])
 
 const videoVisible = ref(false)
 const videoUrl = ref('')
-
-const imageUrls = computed(() =>
-  props.attachments
-    .filter(a => a.file_type === 'image')
-    .map(a => getPreviewUrl(a.id))
-)
 
 function getPreviewUrl(id) {
   const baseUrl = attachmentApi.downloadUrl(id, true)
