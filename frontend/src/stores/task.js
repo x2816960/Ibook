@@ -11,6 +11,7 @@ export const useTaskStore = defineStore('task', () => {
     status: null,
     priority: null,
     keyword: '',
+    due_filter: null,  // 'today' = 今日到期, 'overdue' = 已过期
     page: 1,
     page_size: 20,
   })
@@ -22,6 +23,7 @@ export const useTaskStore = defineStore('task', () => {
       if (filters.value.status) params.status = filters.value.status
       if (filters.value.priority) params.priority = filters.value.priority
       if (filters.value.keyword) params.keyword = filters.value.keyword
+      if (filters.value.due_filter) params.due_filter = filters.value.due_filter
       params.page = filters.value.page
       params.page_size = filters.value.page_size
 

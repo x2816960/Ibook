@@ -6,6 +6,27 @@ from fastapi import HTTPException
 
 from app.models.task import Task
 
+
+def _ensure_utc(dt: datetime | None) -> datetime | None:
+    """确保datetime是UTC时区"""
+    if dt is None:
+        return None
+    if dt.tzinfo is None:
+        # 如果是naive datetime，假设为本地时间，转为UTC
+        # 注意：这里我们假设前端发送的是本地时间，但我们直接存储为UTC
+        # 实际上更好的做法是前端发送带时区的时间，或者后端统一按UTC处理
+        return dt.replace(tzinfo=timezone.utc)
+    return dt.astimezone(timezone.utc)
+
+
+def _localize_datetime(dt: datetime | None) -> datetime | None:
+    """将数据库中的UTC时间转换为带时区的UTC时间"""
+    if dt is None:
+        return None
+    if dt.tzinfo is None:
+        return dt.replace(tzinfo=timezone.utc)
+    return dt.astimezone(timezone.utc)
+
 ALLOWED_TRANSITIONS = {
     "待办": ["进行中", "已取消"],
     "进行中": ["已完成", "待办"],
@@ -20,6 +41,7 @@ def get_tasks(
     status: str | None = None,
     priority: str | None = None,
     keyword: str | None = None,
+    due_filter: str | None = None,
     page: int = 1,
     page_size: int = 20,
 ):
@@ -33,6 +55,29 @@ def get_tasks(
         q = q.filter(
             (Task.title.contains(keyword)) | (Task.description.contains(keyword))
         )
+    
+    # 处理截止时间的筛选
+    if due_filter:
+        now = datetime.now(timezone.utc)
+        # 获取当前时间的小时偏移（考虑时区）
+        # 对于存储为UTC的数据，我们直接使用UTC时间比较
+        if due_filter == "today":
+            # 今日到期：截止时间在今天的00:00到23:59之间（UTC时间）
+            today_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
+            today_end = today_start + timedelta(days=1)
+            q = q.filter(
+                Task.due_date >= today_start.replace(tzinfo=None),
+                Task.due_date < today_end.replace(tzinfo=None),
+                Task.status.in_(["待办", "进行中"]),
+            )
+        elif due_filter == "overdue":
+            # 已过期：截止时间已过且任务未完成
+            q = q.filter(
+                Task.due_date < now.replace(tzinfo=None),
+                Task.is_indefinite == False,
+                Task.due_date.isnot(None),
+                Task.status.in_(["待办", "进行中"]),
+            )
 
     total = q.count()
     items = (
@@ -56,12 +101,14 @@ def create_task(db: Session, user_id: int, data) -> dict:
         .filter(Task.user_id == user_id, Task.is_deleted == False)
         .scalar()
     )
+    # 处理due_date时区：前端发送本地时间，我们视为UTC存储
+    due_date = _ensure_utc(data.due_date) if not data.is_indefinite else None
     task = Task(
         title=data.title,
         description=data.description,
         detail_content=data.detail_content,
         priority=data.priority,
-        due_date=data.due_date if not data.is_indefinite else None,
+        due_date=due_date,
         is_indefinite=data.is_indefinite,
         sort_order=(max_order or 0) + 1,
         user_id=user_id,
@@ -82,8 +129,11 @@ def update_task(db: Session, task_id: int, user_id: int, data) -> dict:
     for field in ["title", "description", "detail_content", "priority", "due_date", "is_indefinite"]:
         value = getattr(data, field, None)
         if value is not None:
-            if field == "due_date" and (data.is_indefinite if data.is_indefinite is not None else task.is_indefinite):
-                setattr(task, field, None)
+            if field == "due_date":
+                if data.is_indefinite if data.is_indefinite is not None else task.is_indefinite:
+                    setattr(task, field, None)
+                else:
+                    setattr(task, field, _ensure_utc(value))
             else:
                 setattr(task, field, value)
     db.commit()
@@ -209,11 +259,11 @@ def _task_to_response(task: Task) -> dict:
         "detail_content": task.detail_content,
         "priority": task.priority,
         "status": task.status,
-        "due_date": task.due_date,
+        "due_date": _localize_datetime(task.due_date),
         "is_indefinite": task.is_indefinite,
         "sort_order": task.sort_order,
-        "created_at": task.created_at,
-        "updated_at": task.updated_at,
+        "created_at": _localize_datetime(task.created_at),
+        "updated_at": _localize_datetime(task.updated_at),
         "user_id": task.user_id,
         "attachment_count": len(task.attachments) if task.attachments else 0,
     }

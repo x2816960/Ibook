@@ -68,7 +68,17 @@
 
 ### GET /api/tasks - 获取任务列表
 
-查询参数: `status`, `priority`, `keyword`, `page` (默认1), `page_size` (默认20, 最大50)
+查询参数:
+| 参数 | 类型 | 必填 | 说明 |
+|------|------|------|------|
+| `status` | string | 否 | 按状态筛选：待办/进行中/已完成/已取消 |
+| `priority` | string | 否 | 按优先级筛选：高/中/低 |
+| `keyword` | string | 否 | 关键词搜索（标题和描述） |
+| `due_filter` | string | 否 | 按截止时间筛选：`today`=今日到期, `overdue`=已过期 |
+| `page` | integer | 否 | 页码，默认1 |
+| `page_size` | integer | 否 | 每页条数，默认20，最大50 |
+
+**注意**: `status` 和 `due_filter` 不能同时使用，后者优先级更高。
 
 ```json
 // Response 200

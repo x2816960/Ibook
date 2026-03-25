@@ -1,12 +1,17 @@
 export function formatDate(dateStr) {
   if (!dateStr) return ''
+  // 解析ISO格式时间字符串（可能带时区）
   const d = new Date(dateStr)
+  // 检查是否有效日期
+  if (isNaN(d.getTime())) return ''
   return d.toLocaleDateString('zh-CN', { year: 'numeric', month: '2-digit', day: '2-digit' })
 }
 
 export function formatDateTime(dateStr) {
   if (!dateStr) return ''
   const d = new Date(dateStr)
+  // 检查是否有效日期
+  if (isNaN(d.getTime())) return ''
   return d.toLocaleString('zh-CN', {
     year: 'numeric', month: '2-digit', day: '2-digit',
     hour: '2-digit', minute: '2-digit',
@@ -22,12 +27,15 @@ export function formatFileSize(bytes) {
 
 export function isOverdue(dueDate) {
   if (!dueDate) return false
-  return new Date(dueDate) < new Date()
+  const due = new Date(dueDate)
+  if (isNaN(due.getTime())) return false
+  return due < new Date()
 }
 
 export function isToday(dateStr) {
   if (!dateStr) return false
   const d = new Date(dateStr)
+  if (isNaN(d.getTime())) return false
   const now = new Date()
   return d.toDateString() === now.toDateString()
 }

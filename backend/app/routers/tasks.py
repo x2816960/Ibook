@@ -23,12 +23,13 @@ def list_tasks(
     status: str | None = Query(None),
     priority: str | None = Query(None),
     keyword: str | None = Query(None),
+    due_filter: str | None = Query(None, description="筛选截止时间: today=今日到期, overdue=已过期"),
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=50),
     db: Session = Depends(get_db),
     user: User = Depends(get_current_user),
 ):
-    return task_service.get_tasks(db, user.id, status, priority, keyword, page, page_size)
+    return task_service.get_tasks(db, user.id, status, priority, keyword, due_filter, page, page_size)
 
 
 @router.post("", response_model=TaskResponse)

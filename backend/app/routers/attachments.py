@@ -3,6 +3,7 @@ from fastapi.responses import FileResponse, StreamingResponse
 from sqlalchemy.orm import Session
 from typing import Optional
 import os
+from urllib.parse import quote
 
 from app.dependencies import get_db, get_current_user, get_current_user_optional
 from app.models.user import User
@@ -78,11 +79,21 @@ def download_attachment(
 
     # 强制下载（非预览）
     if not preview:
+        # 对中文文件名进行 RFC 5987 编码
+        filename = attachment.file_name
+        # ASCII 字符直接用 filename，非 ASCII 字符用 filename*=UTF-8''编码
+        try:
+            filename.encode('ascii')
+            content_disposition = f'attachment; filename="{filename}"'
+        except UnicodeEncodeError:
+            # 文件名包含非 ASCII 字符，使用 RFC 5987 编码
+            encoded_filename = quote(filename, safe='')
+            content_disposition = f"attachment; filename*=UTF-8''{encoded_filename}"
+        
         return FileResponse(
             path=str(file_path),
             media_type=attachment.mime_type,
-            filename=attachment.file_name,
-            headers={"Content-Disposition": f'attachment; filename="{attachment.file_name}"'},
+            headers={"Content-Disposition": content_disposition},
         )
 
     # 预览模式：统一用流式响应，支持 Range 请求（视频播放必需）
@@ -115,10 +126,19 @@ def download_attachment(
                 remaining -= len(chunk)
                 yield chunk
 
+    # 对中文文件名进行 RFC 5987 编码
+    filename = attachment.file_name
+    try:
+        filename.encode('ascii')
+        content_disposition = f'inline; filename="{filename}"'
+    except UnicodeEncodeError:
+        encoded_filename = quote(filename, safe='')
+        content_disposition = f"inline; filename*=UTF-8''{encoded_filename}"
+    
     response_headers = {
         "Accept-Ranges": "bytes",
         "Content-Length": str(content_length),
-        "Content-Disposition": f'inline; filename="{attachment.file_name}"',
+        "Content-Disposition": content_disposition,
     }
 
     if range_header:

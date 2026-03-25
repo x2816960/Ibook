@@ -2,6 +2,46 @@
 
 所有版本更新记录。遵循 [语义化版本](https://semver.org/lang/zh-CN/) 规范。
 
+## [1.4.0] - 2026-03-25
+
+### 新增
+- **Markdown 编辑器支持附件上传**
+  - 在 Markdown 编辑器工具栏新增附件上传按钮
+  - 支持上传非图片/视频类文件（如 ZIP、PDF、DOC 等）
+  - 上传成功后自动插入下载链接到 Markdown 内容中
+  - 修改文件：`frontend/src/components/markdown/MarkdownEditor.vue`
+
+### Bug 修复
+- **修复时区问题**
+  - 问题：前端设置截止时间后，后端存储和显示存在时区偏移
+  - 修复：后端添加时区处理函数 `_ensure_utc` 和 `_localize_datetime`，统一使用 UTC 时间存储并返回带时区信息的时间字符串
+  - 前端 API 层添加日期格式转换，确保发送 ISO 格式时间
+  - 修改文件：
+    - `backend/app/services/task_service.py`
+    - `frontend/src/api/tasks.js`
+    - `frontend/src/utils/helpers.js`
+
+- **修复今日到期/已过期任务筛选不生效的问题**
+  - 问题：点击统计面板的"今日到期"或"已过期"卡片无筛选效果
+  - 修复：
+    - 后端 API 新增 `due_filter` 查询参数（支持 `today` 和 `overdue`）
+    - 后端服务层实现截止时间筛选逻辑
+    - 前端 store 添加 `due_filter` 筛选状态
+    - 重构 TaskStats 组件点击逻辑，支持状态筛选和截止时间筛选的互斥切换
+    - TaskFilter 组件添加筛选提示标签和清除筛选按钮
+  - 修改文件：
+    - `backend/app/routers/tasks.py`
+    - `backend/app/services/task_service.py`
+    - `frontend/src/stores/task.js`
+    - `frontend/src/components/task/TaskStats.vue`
+    - `frontend/src/components/task/TaskFilter.vue`
+
+- **修复中文文件名附件下载失败的问题**
+  - 问题：下载中文文件名附件时返回 "Internal Server Error"
+  - 原因：`Content-Disposition` 头部包含中文字符，无法使用 latin-1 编码
+  - 修复：使用 RFC 5987 编码处理非 ASCII 文件名（`filename*=UTF-8''` 格式）
+  - 修改文件：`backend/app/routers/attachments.py`
+
 ## [1.3.3] - 2026-03-23
 
 ### Bug 修复

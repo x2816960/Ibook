@@ -17,6 +17,13 @@
             </svg>
           </template>
         </NormalToolbar>
+        <NormalToolbar title="上传附件" @onClick="triggerFileUpload">
+          <template #trigger>
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor">
+              <path d="M16.5 6v11.5c0 2.21-1.79 4-4 4s-4-1.79-4-4V5c0-1.38 1.12-2.5 2.5-2.5s2.5 1.12 2.5 2.5v10.5c0 .55-.45 1-1 1s-1-.45-1-1V6H10v9.5c0 1.38 1.12 2.5 2.5 2.5s2.5-1.12 2.5-2.5V5c0-2.21-1.79-4-4-4S7 2.79 7 5v12.5c0 3.04 2.46 5.5 5.5 5.5s5.5-2.46 5.5-5.5V6h-1.5z"/>
+            </svg>
+          </template>
+        </NormalToolbar>
       </template>
     </MdEditor>
     <input
@@ -25,6 +32,12 @@
       accept="video/mp4,video/avi,video/mov,video/x-matroska"
       style="display: none"
       @change="handleVideoSelected"
+    />
+    <input
+      ref="fileInputRef"
+      type="file"
+      style="display: none"
+      @change="handleFileSelected"
     />
   </div>
 </template>
@@ -46,15 +59,16 @@ const emit = defineEmits(['update:modelValue'])
 
 const editorRef = ref()
 const videoInputRef = ref()
+const fileInputRef = ref()
 const content = ref(props.modelValue)
 
-// 工具栏配置：内置工具 + 自定义视频上传按钮（索引 0）
+// 工具栏配置：内置工具 + 自定义视频上传按钮（索引 0）+ 附件上传按钮（索引 1）
 const toolbarConfig = [
   'bold', 'underline', 'italic', 'strikeThrough',
   '-',
   'title', 'sub', 'sup', 'quote', 'unorderedList', 'orderedList', 'task',
   '-',
-  'codeRow', 'code', 'link', 'image', 0,  // 0 = 第一个自定义工具栏（视频上传）
+  'codeRow', 'code', 'link', 'image', 0, 1,  // 0 = 视频上传, 1 = 附件上传
   'table', 'mermaid', 'katex',
   '-',
   'revoke', 'next',
@@ -121,6 +135,45 @@ async function handleVideoSelected(e) {
     const videoTag = `\n<video src="${videoUrl}" controls style="max-width:100%"></video>\n`
     content.value += videoTag
     ElMessage.success('视频上传成功')
+  } catch {
+    // error handled by interceptor
+  }
+}
+
+function triggerFileUpload() {
+  if (!props.taskId) {
+    ElMessage.warning('请先保存任务后再上传附件')
+    return
+  }
+  fileInputRef.value?.click()
+}
+
+async function handleFileSelected(e) {
+  const file = e.target.files?.[0]
+  if (!file) return
+  e.target.value = ''
+
+  // 排除图片和视频类型（它们有专门的上传方式）
+  const fileType = file.type.toLowerCase()
+  if (fileType.startsWith('image/')) {
+    ElMessage.warning('请使用编辑器内置的图片上传功能')
+    return
+  }
+  if (fileType.startsWith('video/')) {
+    ElMessage.warning('请使用工具栏上的视频上传按钮')
+    return
+  }
+
+  try {
+    ElMessage.info('附件上传中...')
+    const res = await attachmentApi.upload(props.taskId, file)
+    const downloadUrl = attachmentApi.downloadUrl(res.data.id, false)
+    const token = localStorage.getItem('token') || sessionStorage.getItem('token')
+    const fullUrl = token ? `${downloadUrl}&token=${token}` : downloadUrl
+    // 插入下载链接到Markdown
+    const fileLink = `\n[📎 ${file.name}](${fullUrl})\n`
+    content.value += fileLink
+    ElMessage.success('附件上传成功')
   } catch {
     // error handled by interceptor
   }

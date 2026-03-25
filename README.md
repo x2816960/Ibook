@@ -1,7 +1,7 @@
 # Ibook 📚
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-1.3.3-blue.svg" alt="Version">
+  <img src="https://img.shields.io/badge/version-1.4.0-blue.svg" alt="Version">
   <img src="https://img.shields.io/badge/license-MIT-green.svg" alt="License">
   <img src="https://img.shields.io/badge/python-3.8+-blue.svg" alt="Python">
   <img src="https://img.shields.io/badge/vue-3.x-green.svg" alt="Vue">
@@ -33,12 +33,14 @@
 ### 🎨 富文本编辑
 - **Markdown 编辑器** - 基于 md-editor-v3 的所见即所得编辑体验
 - **多媒体支持** - 支持插入图片、视频和附件
+- **附件上传** - Markdown 编辑器支持上传文件并插入下载链接
 - **图片预览** - 点击任务中的图片可放大查看
 - **视频播放** - 内置视频播放器，支持在线播放
 
 ### 🔍 任务筛选与排序
-- **多维度筛选** - 按状态、优先级快速筛选任务
+- **多维度筛选** - 按状态、优先级、截止时间（今日到期/已过期）快速筛选任务
 - **关键词搜索** - 支持标题和描述全文搜索
+- **快捷筛选** - 点击统计面板卡片快速筛选对应任务
 - **拖拽排序** - 自由拖拽调整任务优先级顺序
 - **分页展示** - 支持 10/20/50 条每页切换
 
