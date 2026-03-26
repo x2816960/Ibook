@@ -20,17 +20,27 @@ const props = defineProps({
 const content = ref(props.task.detail_content || '')
 const attachments = ref([])
 
-// 给 Markdown 中的图片 URL 附加/替换 token
+// 给 Markdown 中的附件 URL 附加/替换 token
 const processedContent = computed(() => {
   if (!content.value) return ''
   const token = localStorage.getItem('token') || sessionStorage.getItem('token')
   if (!token) return content.value
   // 替换整个 query string，确保新 token 在最后
-  // 匹配 /api/attachments/{id}/download?preview=true 及其后的 &token=xxx
-  // [^)\s"'] 兼容 markdown ![](url) 和 HTML <img>/<video> 标签
+  // 匹配 /api/attachments/{id}/download 及其 query 参数和 &token=xxx
+  // [^)\s"'] 兼容 markdown ![](url) 和 HTML <img>/<video> 标签以及 markdown 链接 [text](url)
   return content.value.replace(
-    /\/api\/attachments\/(\d+)\/download\?preview=true(?:&token=[^)\s"']+)?/g,
-    `/api/attachments/$1/download?preview=true&token=${token}`
+    /\/api\/attachments\/(\d+)\/download(\?[^)\s"']*?)?(?:&token=[^)\s"']*)?/g,
+    (match, id, query) => {
+      // 保留原有的 query 参数（去掉可能存在的旧 token）
+      let newQuery = query || ''
+      if (newQuery) {
+        // 移除已有的 token 参数
+        newQuery = newQuery.replace(/&token=[^&]*/g, '')
+      }
+      // 添加新 token
+      const separator = newQuery.includes('?') ? '&' : '?'
+      return `/api/attachments/${id}/download${newQuery}${separator}token=${token}`
+    }
   )
 })
 

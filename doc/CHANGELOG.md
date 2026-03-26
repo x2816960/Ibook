@@ -2,6 +2,18 @@
 
 所有版本更新记录。遵循 [语义化版本](https://semver.org/lang/zh-CN/) 规范。
 
+## [1.4.1] - 2026-03-26
+
+### Bug 修复
+- **修复附件下载链接因 Token 过期导致下载失败的问题**
+  - 问题：Markdown 中插入的附件下载链接包含硬编码的 JWT Token，Token 默认 24 小时（记住我为 7 天）后过期，导致昨天上传的附件今天无法下载，返回 `{"detail":"无效的认证凭据"}` 错误
+  - 修复方案：
+    - `TaskDetail.vue`：扩展 `processedContent` 计算属性，使用新的正则表达式同时处理预览链接和下载链接，动态替换为当前有效 Token
+    - `AttachmentList.vue`：`download()` 函数获取当前有效 Token 并附加到下载 URL
+  - 修改文件：
+    - `frontend/src/components/task/TaskDetail.vue`
+    - `frontend/src/components/attachment/AttachmentList.vue`
+
 ## [1.4.0] - 2026-03-25
 
 ### 新增

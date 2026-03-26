@@ -63,7 +63,12 @@ function getPreviewUrl(id) {
 }
 
 function download(att) {
-  window.open(attachmentApi.downloadUrl(att.id), '_blank')
+  const token = localStorage.getItem('token') || sessionStorage.getItem('token')
+  let url = attachmentApi.downloadUrl(att.id)
+  if (token) {
+    url += (url.includes('?') ? '&' : '?') + `token=${token}`
+  }
+  window.open(url, '_blank')
 }
 
 function playVideo(att) {
