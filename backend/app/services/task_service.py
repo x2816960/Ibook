@@ -59,19 +59,17 @@ def get_tasks(
     # 处理截止时间的筛选
     if due_filter:
         now = datetime.now(timezone.utc)
-        # 获取当前时间的小时偏移（考虑时区）
-        # 对于存储为UTC的数据，我们直接使用UTC时间比较
         if due_filter == "today":
-            # 今日到期：截止时间在今天的00:00到23:59之间（UTC时间）
             today_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
             today_end = today_start + timedelta(days=1)
             q = q.filter(
                 Task.due_date >= today_start.replace(tzinfo=None),
                 Task.due_date < today_end.replace(tzinfo=None),
+                Task.is_indefinite == False,
+                Task.due_date.isnot(None),
                 Task.status.in_(["待办", "进行中"]),
             )
         elif due_filter == "overdue":
-            # 已过期：截止时间已过且任务未完成
             q = q.filter(
                 Task.due_date < now.replace(tzinfo=None),
                 Task.is_indefinite == False,
@@ -101,7 +99,6 @@ def create_task(db: Session, user_id: int, data) -> dict:
         .filter(Task.user_id == user_id, Task.is_deleted == False)
         .scalar()
     )
-    # 处理due_date时区：前端发送本地时间，我们视为UTC存储
     due_date = _ensure_utc(data.due_date) if not data.is_indefinite else None
     task = Task(
         title=data.title,
@@ -126,16 +123,20 @@ def get_task(db: Session, task_id: int, user_id: int) -> dict:
 
 def update_task(db: Session, task_id: int, user_id: int, data) -> dict:
     task = _get_user_task(db, task_id, user_id)
-    for field in ["title", "description", "detail_content", "priority", "due_date", "is_indefinite"]:
+
+    if data.is_indefinite is not None:
+        task.is_indefinite = data.is_indefinite
+        if data.is_indefinite:
+            task.due_date = None
+
+    for field in ["title", "description", "detail_content", "priority"]:
         value = getattr(data, field, None)
         if value is not None:
-            if field == "due_date":
-                if data.is_indefinite if data.is_indefinite is not None else task.is_indefinite:
-                    setattr(task, field, None)
-                else:
-                    setattr(task, field, _ensure_utc(value))
-            else:
-                setattr(task, field, value)
+            setattr(task, field, value)
+
+    if data.due_date is not None and not task.is_indefinite:
+        task.due_date = _ensure_utc(data.due_date)
+
     db.commit()
     db.refresh(task)
     return _task_to_response(task)
@@ -163,12 +164,35 @@ def change_task_status(db: Session, task_id: int, user_id: int, new_status: str)
 
 
 def update_sort_order(db: Session, user_id: int, task_ids: list[int]):
-    for order, tid in enumerate(task_ids):
-        task = db.query(Task).filter(
-            Task.id == tid, Task.user_id == user_id, Task.is_deleted == False
-        ).first()
-        if task:
-            task.sort_order = order
+    if not task_ids:
+        return
+
+    current_tasks = (
+        db.query(Task)
+        .filter(Task.user_id == user_id, Task.is_deleted == False)
+        .order_by(Task.sort_order.asc(), Task.created_at.asc(), Task.id.asc())
+        .all()
+    )
+    current_ids = [task.id for task in current_tasks]
+    current_id_set = set(current_ids)
+
+    if len(task_ids) != len(set(task_ids)):
+        raise HTTPException(status_code=400, detail="排序参数包含重复任务")
+
+    if any(task_id not in current_id_set for task_id in task_ids):
+        raise HTTPException(status_code=400, detail="排序参数包含无效任务")
+
+    reordered_ids = iter(task_ids)
+    selected_ids = set(task_ids)
+    final_ids = [
+        next(reordered_ids) if task.id in selected_ids else task.id
+        for task in current_tasks
+    ]
+
+    id_to_task = {task.id: task for task in current_tasks}
+    for order, task_id in enumerate(final_ids, start=1):
+        id_to_task[task_id].sort_order = order
+
     db.commit()
 
 
@@ -186,6 +210,8 @@ def get_task_stats(db: Session, user_id: int) -> dict:
     today_due = base.filter(
         Task.due_date >= today_start,
         Task.due_date < today_end,
+        Task.is_indefinite == False,
+        Task.due_date.isnot(None),
         Task.status.in_(["待办", "进行中"]),
     ).count()
     overdue = base.filter(

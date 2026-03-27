@@ -18,13 +18,6 @@
           </el-radio-button>
         </el-radio-group>
       </el-form-item>
-      <el-form-item label="状态" prop="status">
-        <el-radio-group v-model="form.status">
-          <el-radio-button v-for="s in STATUS_OPTIONS" :key="s.value" :value="s.value">
-            {{ s.label }}
-          </el-radio-button>
-        </el-radio-group>
-      </el-form-item>
       <el-form-item label="截止时间">
         <div style="display: flex; align-items: center; gap: 12px; width: 100%">
           <el-date-picker
@@ -98,7 +91,7 @@
 import { ref, reactive, watch, nextTick } from 'vue'
 import { ElMessage } from 'element-plus'
 import { useTaskStore } from '../../stores/task'
-import { PRIORITY_OPTIONS, STATUS_OPTIONS } from '../../utils/constants'
+import { PRIORITY_OPTIONS } from '../../utils/constants'
 import MarkdownEditor from '../markdown/MarkdownEditor.vue'
 import AttachmentList from '../attachment/AttachmentList.vue'
 import { attachmentApi } from '../../api/attachments'
@@ -138,7 +131,6 @@ const form = reactive({
   description: '',
   detail_content: '',
   priority: '中',
-  status: '待办',
   due_date: null,
   is_indefinite: false,
 })
@@ -155,7 +147,6 @@ watch(() => props.task, (t) => {
     form.description = t.description || ''
     form.detail_content = t.detail_content || ''
     form.priority = t.priority
-    form.status = t.status
     form.due_date = t.due_date
     form.is_indefinite = t.is_indefinite
     savedTaskId.value = null
@@ -171,7 +162,6 @@ function resetForm() {
   form.description = ''
   form.detail_content = ''
   form.priority = '中'
-  form.status = '待办'
   form.due_date = null
   form.is_indefinite = false
   detailDialogVisible.value = false

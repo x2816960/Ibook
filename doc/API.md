@@ -74,7 +74,7 @@
 | `status` | string | 否 | 按状态筛选：待办/进行中/已完成/已取消 |
 | `priority` | string | 否 | 按优先级筛选：高/中/低 |
 | `keyword` | string | 否 | 关键词搜索（标题和描述） |
-| `due_filter` | string | 否 | 按截止时间筛选：`today`=今日到期, `overdue`=已过期 |
+| `due_filter` | string | 否 | 按截止时间筛选：`today`=今日到期, `overdue`=已过期，仅统计已设置截止时间的非无限期未完成任务 |
 | `page` | integer | 否 | 页码，默认1 |
 | `page_size` | integer | 否 | 每页条数，默认20，最大50 |
 
@@ -128,6 +128,10 @@
 ```json
 { "task_ids": [3, 1, 5, 2] }
 ```
+
+说明：
+- `task_ids` 表示当前可见列表中需要重排的任务顺序
+- 服务端仅调整这些任务在当前结果中的相对顺序，不改变未包含任务的相对顺序
 
 ### GET /api/tasks/stats - 获取任务统计
 
